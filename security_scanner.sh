@@ -115,11 +115,33 @@ find_world_writable() {
 
     # YOUR CODE HERE
 
+    find_world_writable() {
+    count=0
+    echo
+    echo "--- World-Writable Files & Directories ---"
+    echo
 
-    echo ""
+    # Use process substitution so count persists after the loop
+    while IFS= read -r item; do
+        # skip empty lines (just in case)
+        [ -z "$item" ] && continue
+
+        perms=$(stat -c "%a" "$item" 2>/dev/null || echo "??")
+        if [ -f "$item" ]; then
+            echo "[FILE] $item ($perms)"
+        elif [ -d "$item" ]; then
+            echo "[DIR]  $item ($perms)"
+        else
+            # other types (symlink, etc.) - show as generic
+            echo "[OTHER] $item ($perms)"
+        fi
+
+        ((count++))
+    done < <(find "$TEST_DIR" -perm -002 2>/dev/null)
+
+    echo
     echo "Found $count world-writable items"
-    echo ""
-    return $count
+    WW_COUNT=$count   # export/store for summary
 }
 
 find_executable_non_scripts() {
@@ -160,11 +182,28 @@ find_executable_non_scripts() {
     # YOUR CODE HERE
 
 
-    echo ""
+   find_executable_non_scripts() {
+    count=0
+    echo
+    echo "--- Executable Non-Script Files ---"
+    echo
+
+    # Look for regular files with execute bit set that match extensions
+    # html css txt conf (these shouldn't be executable)
+    while IFS= read -r file; do
+        [ -z "$file" ] && continue
+        perms=$(stat -c "%a" "$file" 2>/dev/null || echo "??")
+        echo "[EXEC] $file ($perms)"
+        ((count++))
+    done < <(
+        find "$TEST_DIR" -type f \( -name "*.html" -o -name "*.css" -o -name "*.txt" -o -name "*.conf" \) -perm /111 2>/dev/null
+    )
+
+    echo
     echo "Found $count files that shouldn't be executable"
-    echo ""
-    return $count
+    EXEC_COUNT=$count
 }
+
 
 #####################################################
 # Main Execution (FULLY PROVIDED - DO NOT MODIFY)
