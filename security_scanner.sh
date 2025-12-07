@@ -74,134 +74,43 @@ setup_test_environment() {
 
 find_world_writable() {
     echo "--- World-Writable Files & Directories ---"
-
     local count=0
-
-    # TODO 1: Find all world-writable files and directories
-    #
-    # Instructions:
-    # 1. Use 'find' to search $TEST_DIR for items with world-write permission
-    #    Hint: find "$TEST_DIR" -perm -002
-    #
-    # 2. For each item found, you need to:
-    #    a. Determine if it's a file or directory using: [ -f "$item" ]
-    #    b. Get permissions using: stat -c "%a" "$item"
-    #    c. Print formatted output (see example below)
-    #    d. Increment the count variable
-    #
-    # 3. Use a while loop with process substitution to process results:
-    #    while IFS= read -r item; do
-    #        # your code here
-    #    done < <(find ...)
-    #
-    #    NOTE: Use "< <(find ...)" NOT "find ... |" to avoid subshell issues!
-    #
-    # Output format examples:
-    #   [FILE] /path/to/file.txt (666)
-    #   [DIR]  /path/to/directory (777)
-    #
-    # Example implementation structure:
-    # while IFS= read -r item; do
-    #     perms=$(stat -c "%a" "$item")
-    #
-    #     if [ -f "$item" ]; then
-    #         echo -e "${RED}[FILE]${NC} $item ($perms)"
-    #     elif [ -d "$item" ]; then
-    #         echo -e "${RED}[DIR] ${NC} $item ($perms)"
-    #     fi
-    #
-    #     ((count++))
-    # done < <(find "$TEST_DIR" -perm -002)
-
-    # YOUR CODE HERE
-
-    find_world_writable() {
-    count=0
-    echo
-    echo "--- World-Writable Files & Directories ---"
     echo
 
-    # Use process substitution so count persists after the loop
     while IFS= read -r item; do
-        # skip empty lines (just in case)
-        [ -z "$item" ] && continue
+        perms=$(stat -c "%a" "$item")
 
-        perms=$(stat -c "%a" "$item" 2>/dev/null || echo "??")
         if [ -f "$item" ]; then
             echo "[FILE] $item ($perms)"
         elif [ -d "$item" ]; then
             echo "[DIR]  $item ($perms)"
-        else
-            # other types (symlink, etc.) - show as generic
-            echo "[OTHER] $item ($perms)"
         fi
 
         ((count++))
-    done < <(find "$TEST_DIR" -perm -002 2>/dev/null)
+    done < <(find "$TEST_DIR" -perm -002)
 
     echo
     echo "Found $count world-writable items"
-    WW_COUNT=$count   # export/store for summary
+    return $count
 }
 
-find_executable_non_scripts() {
-    echo "--- Executable Non-Script Files ---"
 
+    find_executable_non_scripts() {
+    echo "--- Executable Non-Script Files ---"
     local count=0
-
-    # TODO 2: Find files that shouldn't be executable
-    #
-    # Instructions:
-    # 1. Use 'find' to locate .html, .css, .txt, and .conf files that are executable
-    #    Hint: find "$TEST_DIR" -type f \( -name "*.html" -o -name "*.css" -o -name "*.txt" -o -name "*.conf" \) -perm /111
-    #
-    #    Explanation:
-    #    -type f              = files only
-    #    \( ... \)            = group conditions
-    #    -name "*.html"       = HTML files
-    #    -o                   = OR operator
-    #    -perm /111           = any execute bit set
-    #
-    # 2. For each file found:
-    #    a. Get permissions using: stat -c "%a" "$file"
-    #    b. Print formatted output: [EXEC] /path/to/file (permissions)
-    #    c. Increment count
-    #
-    # 3. Use process substitution (NOT pipe) to preserve count:
-    #    while IFS= read -r file; do
-    #        # your code
-    #    done < <(find ...)
-    #
-    # Example implementation structure:
-    # while IFS= read -r file; do
-    #     perms=$(stat -c "%a" "$file")
-    #     echo -e "${YELLOW}[EXEC]${NC} $file ($perms)"
-    #     ((count++))
-    # done < <(find "$TEST_DIR" -type f \( -name "*.html" -o -name "*.css" -o -name "*.txt" -o -name "*.conf" \) -perm /111)
-
-    # YOUR CODE HERE
-
-
-   find_executable_non_scripts() {
-    count=0
-    echo
-    echo "--- Executable Non-Script Files ---"
     echo
 
-    # Look for regular files with execute bit set that match extensions
-    # html css txt conf (these shouldn't be executable)
     while IFS= read -r file; do
-        [ -z "$file" ] && continue
-        perms=$(stat -c "%a" "$file" 2>/dev/null || echo "??")
+        perms=$(stat -c "%a" "$file")
         echo "[EXEC] $file ($perms)"
         ((count++))
     done < <(
-        find "$TEST_DIR" -type f \( -name "*.html" -o -name "*.css" -o -name "*.txt" -o -name "*.conf" \) -perm /111 2>/dev/null
+        find "$TEST_DIR" -type f \( -name "*.html" -o -name "*.css" -o -name "*.txt" -o -name "*.conf" \) -perm /111
     )
 
     echo
     echo "Found $count files that shouldn't be executable"
-    EXEC_COUNT=$count
+    return $count
 }
 
 
